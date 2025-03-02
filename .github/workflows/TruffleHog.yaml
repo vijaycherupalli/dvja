@@ -1,0 +1,46 @@
+name: TruffleHog Secret Scan
+ 
+on:
+ push:
+   branches: [ master ]
+ pull_request:
+   branches: [ master ]
+ 
+jobs:
+ trufflehog:
+   name: Run TruffleHog
+   runs-on: ubuntu-latest
+ 
+   steps:
+     - name: Checkout repository
+       uses: actions/checkout@v2
+ 
+     - name: Install Python
+       uses: actions/setup-python@v2
+       with:
+         python-version: '3.x'
+ 
+     - name: Install TruffleHog
+       run: pip install truffleHog
+ 
+     - name: Run TruffleHog Scan
+       run: |
+         trufflehog git --json . > trufflehog-report.json || true
+ 
+     - name: Convert TruffleHog JSON Report to HTML
+       run: |
+         echo "<html><body><h1>TruffleHog Report</h1><pre>" > trufflehog-report.html
+         cat trufflehog-report.json >> trufflehog-report.html
+         echo "</pre></body></html>" >> trufflehog-report.html
+ 
+     - name: Upload TruffleHog JSON Report
+       uses: actions/upload-artifact@v4
+       with:
+         name: trufflehog-report-json
+         path: trufflehog-report.json
+ 
+     - name: Upload TruffleHog HTML Report
+       uses: actions/upload-artifact@v4
+       with:
+         name: trufflehog-report-html
+         path: trufflehog-report.html
