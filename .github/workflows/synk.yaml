@@ -1,0 +1,66 @@
+name: Snyk SAST Scan
+ 
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+ 
+jobs:
+  snyk-sast:
+    name: Run Snyk SAST
+    runs-on: ubuntu-latest
+ 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+ 
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+ 
+      - name: Install Snyk
+        run: npm install -g snyk snyk-to-html
+ 
+      - name: Authenticate Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk auth $SNYK_TOKEN
+ 
+      - name: Run Snyk Code Test
+        run: |
+          snyk code test --json > snyk-code-report.json || true
+ 
+      - name: Convert Snyk Report to HTML
+        run: snyk-to-html -i snyk-code-report.json -o snyk-code-report.html
+ 
+      - name: Upload Snyk JSON Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-code-report-json
+          path: snyk-code-report.json
+ 
+      - name: Upload Snyk HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-code-report-html
+          path: snyk-code-report.html
+      - name: Run Snyk Open Source Test (SCA)
+        run: |
+          snyk test --json > snyk-sca-report.json || true
+ 
+      - name: Convert Snyk SCA Report to HTML
+        run: snyk-to-html -i snyk-sca-report.json -o snyk-sca-report.html
+ 
+      - name: Upload Snyk SCA JSON Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-sca-report-json
+          path: snyk-sca-report.json
+ 
+      - name: Upload Snyk SCA HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-sca-report-html
+          path: snyk-sca-report.html
